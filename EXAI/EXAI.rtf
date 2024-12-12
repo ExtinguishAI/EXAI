@@ -1,0 +1,229 @@
+{\rtf1\ansi\ansicpg936\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 EXAI TEE Plugin (@EXAI/plugin-tee)\
+Integrates Dstack SDK to enable TEE (Trusted Execution Environment) functionality and deploy secure & privacy-enhanced EXAI Agents:\
+\
+Providers:\
+\
+deriveKeyProvider - Allows for secure key derivation within a TEE environment. It supports deriving keys for both Solana (Ed25519) and Ethereum (ECDSA) chains.\
+remoteAttestationProvider - Generate a Remote Attestation Quote based on report_data.\
+DeriveKeyProvider Usage\
+\
+import \{ DeriveKeyProvider \} from "@EXAI/plugin-tee"; \
+\
+// Initialize the provider\
+const provider = new DeriveKeyProvider();\
+\
+// Derive a raw key\
+try \{\
+    const rawKey = await provider.rawDeriveKey(\
+        "/path/to/derive",\
+        "subject-identifier",\
+    );\
+    // rawKey is a DeriveKeyResponse that can be used for further processing\
+    // to get the uint8Array do the following\
+    const rawKeyArray = rawKey.asUint8Array();\
+\} catch (error) \{\
+    console.error("Raw key derivation failed:", error);\
+\}\
+\
+// Derive a Solana keypair (Ed25519)\
+try \{\
+    const solanaKeypair = await provider.deriveEd25519Keypair(\
+        "/path/to/derive",\
+        "subject-identifier",\
+    );\
+    // solanaKeypair can now be used for Solana operations\
+\} catch (error) \{\
+    console.error("Solana key derivation failed:", error);\
+\}\
+\
+// Derive an Ethereum keypair (ECDSA)\
+try \{\
+    const evmKeypair = await provider.deriveEcdsaKeypair(\
+        "/path/to/derive",\
+        "subject-identifier",\
+    );\
+    // evmKeypair can now be used for Ethereum operations\
+\} catch (error) \{\
+    console.error("EVM key derivation failed:", error);\
+\}\
+\
+RemoteAttestationProvider Usage\
+\
+import \{ RemoteAttestationProvider \} from "@EXAI/plugin-tee";\
+// Initialize the provider\
+const provider = new RemoteAttestationProvider();\
+// Generate Remote Attestation\
+try \{\
+    const attestation = await provider.generateAttestation("your-report-data");\
+    console.log("Attestation:", attestation);\
+\} catch (error) \{\
+    console.error("Failed to generate attestation:", error);\
+\}\
+\
+Configuration\
+\
+To get a TEE simulator for local testing, use the following commands:\
+\
+docker pull phalanetwork/tappd-simulator:latest\
+# by default the simulator is available in localhost:8090\
+docker run --rm -p 8090:8090 phalanetwork/tappd-simulator:latest\
+\
+When using the provider through the runtime environment, ensure the following settings are configured:\
+\
+ # Optional, for simulator purposes if testing on mac or windows. Leave empty for Linux x86 machines.\
+DSTACK_SIMULATOR_ENDPOINT="http://host.docker.internal:8090"\
+WALLET_SECRET_SALT=your-secret-salt // Required to single agent deployments\
+\
+\
+9. Webhook Plugin (@EXAI/plugin-coinbase-webhooks)\
+Manages webhooks using the Coinbase SDK, allowing for the creation and management of webhooks to listen for specific events on the Coinbase platform.\
+\
+Actions:\
+\
+CREATE_WEBHOOK - Create a new webhook to listen for specific events.\
+Inputs:\
+networkId (string): The network ID where the webhook should listen for events.\
+eventType (string): The type of event to listen for (e.g., transfers).\
+eventFilters (object, optional): Additional filters for the event.\
+eventTypeFilter (string, optional): Specific event type filter.\
+Outputs: Confirmation message with webhook details.\
+Example:\
+\{\
+  "networkId": "base",\
+  "eventType": "transfers",\
+  "notificationUri": "https://your-notification-uri.com"\
+\}\
+\
+Providers:\
+\
+webhookProvider - Retrieves a list of all configured webhooks.\
+Outputs: A list of webhooks with details such as ID, URL, event type, and status.\
+Description:\
+\
+The Webhook Plugin enables EXAI to interact with the Coinbase SDK to create and manage webhooks. This allows for real-time event handling and notifications based on specific criteria set by the user.\
+\
+Usage Instructions:\
+\
+Configure the Plugin Add the plugin to your character\'92s configuration:\
+\
+import \{ webhookPlugin \} from "@EXAI/plugin-coinbase-webhooks";\
+\
+const character = \{\
+  plugins: [webhookPlugin],\
+\};\
+\
+Ensure Secure Configuration Set the following environment variables or runtime settings to ensure the plugin functions securely:\
+\
+COINBASE_API_KEY: API key for Coinbase SDK.\
+COINBASE_PRIVATE_KEY: Private key for secure transactions.\
+COINBASE_NOTIFICATION_URI: URI where notifications should be sent.\
+Example Call\
+\
+To create a webhook:\
+\
+const response = await runtime.triggerAction("CREATE_WEBHOOK", \{\
+  networkId: "base",\
+  eventType: "transfers",\
+  notificationUri: "https://your-notification-uri.com"\
+\});\
+console.log("Webhook creation response:", response);\
+\
+Best Practices:\
+\
+Secure Secrets Storage: Ensure COINBASE_API_KEY, COINBASE_PRIVATE_KEY, and COINBASE_NOTIFICATION_URI are stored securely in runtime.character.settings.secrets or environment variables.\
+Validation: Always validate input parameters to ensure compliance with expected formats and supported networks.\
+Error Handling: Monitor logs for errors during webhook creation and adjust retry logic as needed.\
+Writing Custom Plugins\
+Create a new plugin by implementing the Plugin interface:\
+\
+import \{ Plugin, Action, Evaluator, Provider \} from "@EXAI/eliza";\
+\
+const myCustomPlugin: Plugin = \{\
+    name: "my-custom-plugin",\
+    description: "Adds custom functionality",\
+    actions: [\
+        /* custom actions */\
+    ],\
+    evaluators: [\
+        /* custom evaluators */\
+    ],\
+    providers: [\
+        /* custom providers */\
+    ],\
+    services: [\
+        /* custom services */\
+    ],\
+\};\
+\
+Best Practices\
+Modularity: Keep plugins focused on specific functionality\
+Dependencies: Clearly document any external dependencies\
+Error Handling: Implement robust error handling\
+Documentation: Provide clear documentation for actions and evaluators\
+Testing: Include tests for plugin functionality\
+Plugin Development Guidelines\
+Action Development\
+Implement the Action interface\
+Provide clear validation logic\
+Include usage examples\
+Handle errors gracefully\
+Evaluator Development\
+Implement the Evaluator interface\
+Define clear evaluation criteria\
+Include validation logic\
+Document evaluation metrics\
+Provider Development\
+Implement the Provider interface\
+Define context generation logic\
+Handle state management\
+Document provider capabilities\
+Common Issues & Solutions\
+Plugin Loading Issues\
+// Check if plugins are loaded correctly\
+if (character.plugins) \{\
+    console.log("Plugins are: ", character.plugins);\
+    const importedPlugins = await Promise.all(\
+        character.plugins.map(async (plugin) => \{\
+            const importedPlugin = await import(plugin);\
+            return importedPlugin;\
+        \}),\
+    );\
+    character.plugins = importedPlugins;\
+\}\
+\
+Service Registration\
+// Proper service registration\
+registerService(service: Service): void \{\
+    const serviceType = (service as typeof Service).serviceType;\
+    if (this.services.has(serviceType)) \{\
+        console.warn(`Service $\{serviceType\} is already registered`);\
+        return;\
+    \}\
+    this.services.set(serviceType, service);\
+\}\
+\
+Future Extensions\
+The plugin system is designed to be extensible. Future additions may include:\
+\
+Database adapters\
+Authentication providers\
+Custom model providers\
+External API integrations\
+Workflow automation\
+Custom UI components\
+Contributing\
+To contribute a new plugin:\
+\
+Follow the plugin structure guidelines\
+Include comprehensive documentation\
+Add tests for all functionality\
+Submit a pull request\
+Update the plugin registry\
+}
